@@ -18,6 +18,7 @@ export async function createUser(user: CreateUserParams) {
     handleError(error);
   }
 }
+import { clerkClient } from "@clerk/nextjs";
 
 // READ
 export async function getUserById(userId: string) {
@@ -26,9 +27,48 @@ export async function getUserById(userId: string) {
 
     const user = await User.findOne({ clerkId: userId });
 
-    if (!user) throw new Error("User not found");
+    if (!user) {
+      // If user not found, try to get user data from Clerk and create them
+      try {
+        const clerkUser = await clerkClient.users.getUser(userId);
+        if (clerkUser) {
+          const newUser = {
+            clerkId: userId,
+            email: clerkUser.emailAddresses[0].emailAddress,
+            username: clerkUser.username || '',
+            firstName: clerkUser.firstName || '',
+            lastName: clerkUser.lastName || '',
+            photo: clerkUser.imageUrl,
+          };
+          return await createOrGetUser(newUser);
+        }
+      } catch (clerkError) {
+        console.error("Failed to fetch user from Clerk:", clerkError);
+        throw new Error("User not found");
+      }
+    }
 
     return JSON.parse(JSON.stringify(user));
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+// CREATE OR GET USER
+export async function createOrGetUser(user: CreateUserParams) {
+  try {
+    await connectToDatabase();
+
+    // Check if user exists
+    let existingUser = await User.findOne({ clerkId: user.clerkId });
+
+    if (existingUser) {
+      return JSON.parse(JSON.stringify(existingUser));
+    }
+
+    // If user doesn't exist, create new user
+    const newUser = await User.create(user);
+    return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
     handleError(error);
   }
