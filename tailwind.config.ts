@@ -69,6 +69,9 @@ module.exports = {
         IBMPlex: ["var(--font-ibm-plex)"],
       },
       backgroundImage: {
+        "blue-gradient": "linear-gradient(to right, #1e3a8a, #3b82f6)",  
+        "green-gradient": "linear-gradient(to right, #065f46, #10b981)",
+        "orange-gradient": "linear-gradient(to right, #b45309, #f59e0b)", 
         "purple-gradient": "url('/assets/images/gradient-bg.svg')",
         banner: "url('/assets/images/banner-bg.png')",
       },
